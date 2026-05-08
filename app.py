@@ -7,15 +7,15 @@ from tempfile import NamedTemporaryFile
 
 app = FastAPI()
 
-# تم تحديث المفتاح الجديد هنا
-API_TOKEN = "r8_OLJfUoSGQUAIQiWD9LUaRHLz7GicdHU0M2cEh"
+# سيقوم الكود بجلب المفتاح من إعدادات Render (Environment Variables)
+API_TOKEN = os.getenv("r8_4ElpchhTv09CVRhzkwlVOADZYQRg0Ny29IYEM")
 
 @app.get("/", response_class=HTMLResponse)
 async def main():
     if os.path.exists("templates/index.html"):
         with open("templates/index.html", "r", encoding="utf-8") as f:
             return f.read()
-    return "الملف غير موجود"
+    return "File templates/index.html not found"
 
 @app.post("/enhance-video")
 async def enhance_video(
@@ -24,11 +24,12 @@ async def enhance_video(
     face_enhance: str = Form("false"),
     fps: str = Form("24")
 ):
+    if not API_TOKEN:
+        return {"error": "المفتاح غير موجود في إعدادات Render. يرجى إضافته في خانة Environment Variables باسم REPLICATE_API_TOKEN"}
+    
     temp_path = None
     try:
-        # استخدام المفتاح الجديد
         client = replicate.Client(api_token=API_TOKEN)
-        
         suffix = os.path.splitext(file.filename)[1]
         with NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
             shutil.copyfileobj(file.file, temp_file)

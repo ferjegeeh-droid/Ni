@@ -1,30 +1,39 @@
 import os
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
 import replicate
 import uvicorn
 
 app = FastAPI()
 
-# سيقوم البرنامج بالبحث عن المفتاح في إعدادات السيرفر تلقائياً
-# REPLICATE_API_TOKEN يجب أن يكون معرفاً في Render
+# تأكد من وضع التوكن في إعدادات Render كما فعلنا سابقاً
+REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
 
 @app.get("/", response_class=HTMLResponse)
 async def main():
-    if os.path.exists("templates/index.html"):
-        with open("templates/index.html", "r", encoding="utf-8") as f:
-            return f.read()
-    return "File templates/index.html not found"
+    with open("templates/index.html", "r", encoding="utf-8") as f:
+        return f.read()
 
-@app.post("/enhance")
-async def enhance_image(file: UploadFile = File(...)):
+@app.post("/enhance-video")
+async def enhance_video(
+    file: UploadFile = File(...),
+    scale: int = Form(2), # التكبير (2x أو 4x)
+    face_enhance: bool = Form(False), # تحسين الوجوه
+    fps: int = Form(24) # عدد الفريمات
+):
     try:
-        # استخدام موديل Real-ESRGAN
+        # استخدام موديل Real-ESRGAN للفيديو
         output = replicate.run(
-            "xinntao/realesrgan:1b97c3c68525c7645ee3611f79616521996e7af63f133b3ca2f0e05f628c899c",
-            input={"image": file.file}
+            "lucataco/real-esrgan-video:de797303d73507301c2cf4a29a4358a9dfeb8c6c8c4a457a41ec59d0421e3305",
+            input={
+                "video": file.file,
+                "upscale": scale,
+                "face_enhance": face_enhance,
+                "fps": fps
+            }
         )
-        return {"url": output}
+        # النتيجة تكون رابط فيديو MP4 عالي الجودة
+        return {"video_url": output}
     except Exception as e:
         return {"error": str(e)}
 

@@ -6,9 +6,6 @@ import uvicorn
 
 app = FastAPI()
 
-# تأكد من وضع التوكن في إعدادات Render كما فعلنا سابقاً
-REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
-
 @app.get("/", response_class=HTMLResponse)
 async def main():
     with open("templates/index.html", "r", encoding="utf-8") as f:
@@ -17,24 +14,29 @@ async def main():
 @app.post("/enhance-video")
 async def enhance_video(
     file: UploadFile = File(...),
-    scale: int = Form(2), # التكبير (2x أو 4x)
-    face_enhance: bool = Form(False), # تحسين الوجوه
-    fps: int = Form(24) # عدد الفريمات
+    scale: str = Form("2"),
+    face_enhance: str = Form("false"),
+    fps: str = Form("24")
 ):
     try:
-        # استخدام موديل Real-ESRGAN للفيديو
+        # تحويل القيم لنوع البيانات الصحيح
+        is_face_true = True if face_enhance.lower() == "true" else False
+        scale_int = int(scale)
+        fps_int = int(fps)
+
+        # تشغيل الموديل باستخدام رابط مباشر للملف المؤقت
         output = replicate.run(
             "lucataco/real-esrgan-video:de797303d73507301c2cf4a29a4358a9dfeb8c6c8c4a457a41ec59d0421e3305",
             input={
-                "video": file.file,
-                "upscale": scale,
-                "face_enhance": face_enhance,
-                "fps": fps
+                "video": file.file, # إرسال الملف كـ stream
+                "upscale": scale_int,
+                "face_enhance": is_face_true,
+                "fps": fps_int
             }
         )
-        # النتيجة تكون رابط فيديو MP4 عالي الجودة
-        return {"video_url": output}
+        return {"video_url": str(output)}
     except Exception as e:
+        # التأكد من إرسال الخطأ كنص فقط لتجنب مشكلة الـ JSON
         return {"error": str(e)}
 
 if __name__ == "__main__":

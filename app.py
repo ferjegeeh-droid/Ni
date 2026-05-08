@@ -7,15 +7,15 @@ from tempfile import NamedTemporaryFile
 
 app = FastAPI()
 
-# تم وضع المفتاح الخاص بك هنا مباشرة لضمان عدم حدوث خطأ 401 مجدداً
-API_TOKEN = "r8_UZFe5QnfRpkHxJOwiLQwILQvdnXd7so3OZtRX"
+# تم تحديث المفتاح الجديد هنا
+API_TOKEN = "r8_OLJfUoSGQUAIQiWD9LUaRHLz7GicdHU0M2cEh"
 
 @app.get("/", response_class=HTMLResponse)
 async def main():
     if os.path.exists("templates/index.html"):
         with open("templates/index.html", "r", encoding="utf-8") as f:
             return f.read()
-    return "File templates/index.html not found"
+    return "الملف غير موجود"
 
 @app.post("/enhance-video")
 async def enhance_video(
@@ -26,7 +26,7 @@ async def enhance_video(
 ):
     temp_path = None
     try:
-        # ربط التوكن بالعميل مباشرة
+        # استخدام المفتاح الجديد
         client = replicate.Client(api_token=API_TOKEN)
         
         suffix = os.path.splitext(file.filename)[1]
@@ -37,7 +37,6 @@ async def enhance_video(
         is_face_true = True if face_enhance.lower() == "true" else False
         
         with open(temp_path, "rb") as f:
-            # تشغيل المعالجة
             output = client.run(
                 "lucataco/real-esrgan-video:de797303d73507301c2cf4a29a4358a9dfeb8c6c8c4a457a41ec59d0421e3305",
                 input={

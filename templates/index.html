@@ -2,130 +2,98 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مُحسن الصور الذكي | Topaz Clone</title>
+    <title>Topaz AI Video Web</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            text-align: center; 
-            padding: 20px; 
-            background: #0f0f0f; 
-            color: #e0e0e0; 
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            background: #1e1e1e;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .upload-box { 
-            border: 2px dashed #3498db; 
-            padding: 40px; 
-            border-radius: 10px; 
-            margin-bottom: 20px;
-            transition: 0.3s;
-        }
-        .upload-box:hover {
-            border-color: #2ecc71;
-            background: #252525;
-        }
-        button { 
-            background: #3498db; 
-            color: white; 
-            border: none; 
-            padding: 15px 30px; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            font-size: 18px;
-            font-weight: bold;
-        }
-        button:hover { background: #2980b9; }
-        #loading { 
-            display: none; 
-            margin-top: 20px; 
-            color: #f1c40f; 
-        }
-        #result img {
-            max-width: 100%;
-            border-radius: 10px;
-            margin-top: 20px;
-            border: 2px solid #333;
-        }
-        .download-btn {
-            display: inline-block;
-            margin-top: 20px;
-            background: #27ae60;
-            color: white;
-            text-decoration: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-        }
+        body { font-family: 'Inter', sans-serif; background: #0a0a0a; color: white; display: flex; height: 100vh; margin: 0; }
+        /* القائمة الجانبية للإعدادات */
+        .sidebar { width: 300px; background: #151515; padding: 20px; border-left: 1px solid #333; }
+        .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .setting-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #aaa; }
+        select, input { width: 100%; background: #222; border: 1px solid #444; color: white; padding: 8px; border-radius: 5px; }
+        .preview-box { width: 80%; height: 60%; border: 2px dashed #333; border-radius: 10px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .btn-primary { background: #005ce6; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; }
+        #status { margin-top: 15px; color: #00ff00; display: none; }
+        video { max-width: 100%; max-height: 100%; border-radius: 8px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>مُحسن الصور بالذكاء الاصطناعي 🚀</h1>
-    <p>قم برفع صورة باهتة وسنقوم بتحسين جودتها فوراً</p>
-
-    <div class="upload-box">
-        <input type="file" id="imageInput" accept="image/*">
-        <br><br>
-        <button onclick="uploadImage()">ابدأ المعالجة الآن</button>
+<div class="sidebar">
+    <h2>إعدادات المعالجة</h2>
+    
+    <div class="setting-group">
+        <label>درجة التكبير (Upscale)</label>
+        <select id="scale">
+            <option value="2">2x (HD)</option>
+            <option value="4">4x (4K)</option>
+        </select>
     </div>
 
-    <div id="loading">
-        <div class="spinner"></div>
-        <p>جاري معالجة الصورة باستخدام الـ GPU... انتظر ثواني قليلة</p>
+    <div class="setting-group">
+        <label>تحسين ملامح الوجه</label>
+        <select id="face_enhance">
+            <option value="false">إيقاف</option>
+            <option value="true">تفعيل (AI Face)</option>
+        </select>
     </div>
 
-    <div id="result"></div>
+    <div class="setting-group">
+        <label>معدل الفريمات (FPS)</label>
+        <input type="number" id="fps" value="24">
+    </div>
+
+    <button class="btn-primary" onclick="processVideo()">ابدأ المعالجة</button>
+    <div id="status">جاري معالجة الفيديو... قد يستغرق دقائق</div>
+</div>
+
+<div class="main-content">
+    <h1>Topaz AI Video Clone</h1>
+    <div class="preview-box" id="previewContainer">
+        <input type="file" id="videoInput" accept="video/*" onchange="previewUpload()">
+        <p id="uploadText">اسحب الفيديو هنا أو انقر للاختيار</p>
+    </div>
+    <div id="resultArea" style="margin-top: 20px; width: 100%; text-align: center;"></div>
 </div>
 
 <script>
-    async function uploadImage() {
-        const input = document.getElementById('imageInput');
-        const resultDiv = document.getElementById('result');
-        const loadingDiv = document.getElementById('loading');
+    function previewUpload() {
+        const file = document.getElementById('videoInput').files[0];
+        document.getElementById('uploadText').innerText = "تم اختيار: " + file.name;
+    }
 
-        if (input.files.length === 0) {
-            alert("من فضلك اختر صورة أولاً!");
-            return;
-        }
+    async function processVideo() {
+        const fileInput = document.getElementById('videoInput');
+        if (fileInput.files.length === 0) return alert("اختر فيديو أولاً");
 
-        // إظهار رسالة التحميل وإخفاء النتائج السابقة
-        loadingDiv.style.display = 'block';
-        resultDiv.innerHTML = '';
+        const status = document.getElementById('status');
+        const resultArea = document.getElementById('resultArea');
+        status.style.display = 'block';
 
         const formData = new FormData();
-        formData.append('file', input.files[0]);
+        formData.append('file', fileInput.files[0]);
+        formData.append('scale', document.getElementById('scale').value);
+        formData.append('face_enhance', document.getElementById('face_enhance').value);
+        formData.append('fps', document.getElementById('fps').value);
 
         try {
-            // إرسال الصورة للسيرفر (FastAPI على Render)
-            const response = await fetch('/enhance', { 
-                method: 'POST', 
-                body: formData 
-            });
-
+            const response = await fetch('/enhance-video', { method: 'POST', body: formData });
             const data = await response.json();
 
-            if (data.url) {
-                // عرض الصورة المحسنة باستخدام الرابط القادم من Replicate
-                resultDiv.innerHTML = `
-                    <h3>تم التحسين بنجاح!</h3>
-                    <img src="${data.url}" alt="Enhanced Image">
-                    <br>
-                    <a href="${data.url}" target="_blank" class="download-btn">تحميل الصورة بجودة عالية</a>
+            if (data.video_url) {
+                resultArea.innerHTML = `
+                    <h3>النتيجة النهائية:</h3>
+                    <video controls src="${data.video_url}"></video>
+                    <br><br>
+                    <a href="${data.video_url}" download style="color:#005ce6">تحميل الفيديو المحسن</a>
                 `;
             } else {
-                resultDiv.innerHTML = `<p style="color:red">خطأ: ${data.error}</p>`;
+                alert("خطأ: " + data.error);
             }
-        } catch (error) {
-            resultDiv.innerHTML = `<p style="color:red">حدث خطأ في الاتصال بالسيرفر</p>`;
+        } catch (e) {
+            alert("حدث خطأ في الاتصال");
         } finally {
-            loadingDiv.style.display = 'none';
+            status.style.display = 'none';
         }
     }
 </script>

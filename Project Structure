@@ -1,0 +1,6 @@
+/topaz-clone
+├── app.py
+├── requirements.txt
+├── Dockerfile
+└── templates/
+    └── index.html

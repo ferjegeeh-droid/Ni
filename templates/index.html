@@ -1,23 +1,134 @@
-async function uploadImage() {
-    const input = document.getElementById('imageInput');
-    if (input.files.length === 0) return alert("اختر صورة أولاً");
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مُحسن الصور الذكي | Topaz Clone</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            text-align: center; 
+            padding: 20px; 
+            background: #0f0f0f; 
+            color: #e0e0e0; 
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #1e1e1e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .upload-box { 
+            border: 2px dashed #3498db; 
+            padding: 40px; 
+            border-radius: 10px; 
+            margin-bottom: 20px;
+            transition: 0.3s;
+        }
+        .upload-box:hover {
+            border-color: #2ecc71;
+            background: #252525;
+        }
+        button { 
+            background: #3498db; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 18px;
+            font-weight: bold;
+        }
+        button:hover { background: #2980b9; }
+        #loading { 
+            display: none; 
+            margin-top: 20px; 
+            color: #f1c40f; 
+        }
+        #result img {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 2px solid #333;
+        }
+        .download-btn {
+            display: inline-block;
+            margin-top: 20px;
+            background: #27ae60;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
 
-    document.getElementById('loading').style.display = 'block';
-    const formData = new FormData();
-    formData.append('file', input.files[0]);
+<div class="container">
+    <h1>مُحسن الصور بالذكاء الاصطناعي 🚀</h1>
+    <p>قم برفع صورة باهتة وسنقوم بتحسين جودتها فوراً</p>
 
-    const response = await fetch('/enhance', { method: 'POST', body: formData });
-    const data = await response.json();
-    
-    if(data.url) {
-        document.getElementById('result').innerHTML = `
-            <h3>النتيجة:</h3>
-            <img src="${data.url}" style="max-width: 100%; border-radius: 10px;">
-            <br><br>
-            <a href="${data.url}" target="_blank">تحميل الصورة المحسنة</a>
-        `;
-    } else {
-        alert("خطأ: " + data.error);
+    <div class="upload-box">
+        <input type="file" id="imageInput" accept="image/*">
+        <br><br>
+        <button onclick="uploadImage()">ابدأ المعالجة الآن</button>
+    </div>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>جاري معالجة الصورة باستخدام الـ GPU... انتظر ثواني قليلة</p>
+    </div>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    async function uploadImage() {
+        const input = document.getElementById('imageInput');
+        const resultDiv = document.getElementById('result');
+        const loadingDiv = document.getElementById('loading');
+
+        if (input.files.length === 0) {
+            alert("من فضلك اختر صورة أولاً!");
+            return;
+        }
+
+        // إظهار رسالة التحميل وإخفاء النتائج السابقة
+        loadingDiv.style.display = 'block';
+        resultDiv.innerHTML = '';
+
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+
+        try {
+            // إرسال الصورة للسيرفر (FastAPI على Render)
+            const response = await fetch('/enhance', { 
+                method: 'POST', 
+                body: formData 
+            });
+
+            const data = await response.json();
+
+            if (data.url) {
+                // عرض الصورة المحسنة باستخدام الرابط القادم من Replicate
+                resultDiv.innerHTML = `
+                    <h3>تم التحسين بنجاح!</h3>
+                    <img src="${data.url}" alt="Enhanced Image">
+                    <br>
+                    <a href="${data.url}" target="_blank" class="download-btn">تحميل الصورة بجودة عالية</a>
+                `;
+            } else {
+                resultDiv.innerHTML = `<p style="color:red">خطأ: ${data.error}</p>`;
+            }
+        } catch (error) {
+            resultDiv.innerHTML = `<p style="color:red">حدث خطأ في الاتصال بالسيرفر</p>`;
+        } finally {
+            loadingDiv.style.display = 'none';
+        }
     }
-    document.getElementById('loading').style.display = 'none';
-}
+</script>
+
+</body>
+</html>

@@ -1,10 +1,5 @@
 fastapi
 uvicorn
+replicate
 python-multipart
-numpy
-opencv-python-headless
-torch
-torchvision
-basicsr
-realesrgan
-gdown
+jinja2

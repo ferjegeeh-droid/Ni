@@ -2,231 +2,127 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Topaz AI Video Cloud</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Topaz Mobile AI</title>
     <style>
-        :root {
-            --bg-dark: #0a0a0a;
-            --sidebar-bg: #161616;
-            --accent-blue: #0066ff;
-            --border-color: #333;
-            --text-main: #e0e0e0;
-        }
+        :root { --bg: #000; --card: #121212; --blue: #007aff; --green: #34c759; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto; background: var(--bg); color: white; }
+        
+        .app-container { display: flex; flex-direction: column; height: 100vh; }
+        
+        /* منطقة العرض */
+        .viewer { flex: 1; position: relative; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+        video { width: 100%; max-height: 40vh; background: #111; margin-bottom: 5px; border-radius: 8px; }
+        .label-tag { background: rgba(0,0,0,0.6); padding: 2px 8px; font-size: 12px; border-radius: 4px; align-self: flex-start; margin: 5px 15px; color: #aaa; }
 
-        body {
-            margin: 0;
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
+        /* منطقة الإعدادات */
+        .controls { background: var(--card); padding: 20px; border-top: 1px solid #222; border-radius: 20px 20px 0 0; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        
+        label { font-size: 11px; color: #888; display: block; margin-bottom: 4px; }
+        select, input { width: 100%; background: #1c1c1e; border: none; color: white; padding: 12px; border-radius: 10px; font-size: 14px; outline: none; }
 
-        /* Sidebar Styling */
-        .sidebar {
-            width: 320px;
-            background: var(--sidebar-bg);
-            border-left: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
-        }
+        .btn-main { background: var(--blue); color: white; border: none; padding: 16px; border-radius: 12px; font-weight: bold; width: 100%; font-size: 16px; margin-top: 10px; transition: 0.2s; }
+        .btn-main:active { transform: scale(0.98); opacity: 0.8; }
+        .btn-download { background: var(--green); display: none; text-decoration: none; text-align: center; }
 
-        h2 { font-size: 1.2rem; margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 10px; color: white; }
-
-        .control-group { margin-bottom: 20px; }
-        label { display: block; font-size: 0.85rem; color: #888; margin-bottom: 8px; }
-
-        select, input {
-            width: 100%;
-            background: #252525;
-            border: 1px solid #444;
-            color: white;
-            padding: 10px;
-            border-radius: 6px;
-            outline: none;
-            transition: 0.3s;
-        }
-
-        select:focus { border-color: var(--accent-blue); }
-
-        .btn-run {
-            background: var(--accent-blue);
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: auto;
-            transition: 0.3s;
-        }
-
-        .btn-run:hover { background: #0052cc; transform: translateY(-2px); }
-        .btn-run:disabled { background: #444; cursor: not-allowed; }
-
-        /* Main Viewport */
-        .viewport {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            position: relative;
-        }
-
-        .video-container {
-            width: 100%;
-            max-width: 900px;
-            height: 500px;
-            border: 2px dashed #333;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #0f0f0f;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .video-container video { width: 100%; height: 100%; object-fit: contain; }
-
-        .upload-placeholder { text-align: center; color: #666; }
-        .upload-placeholder i { font-size: 3rem; display: block; margin-bottom: 10px; }
-
-        /* Loading Animation */
-        .loading-overlay {
-            display: none;
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #333;
-            border-top: 5px solid var(--accent-blue);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
+        /* تحميل */
+        .loader { display: none; position: absolute; background: rgba(0,0,0,0.8); top:0; left:0; right:0; bottom:0; z-index: 10; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #333; border-top-color: var(--blue); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <div class="viewport">
-        <div class="video-container" id="dropZone">
-            <div class="upload-placeholder" id="placeholder">
-                <p>اسحب الفيديو هنا أو انقر لاختيار ملف</p>
-                <input type="file" id="videoInput" accept="video/*" style="opacity: 0; position: absolute; width: 100%; height: 100%; cursor: pointer;">
-            </div>
-            <video id="previewVideo" controls style="display: none;"></video>
-            
-            <div class="loading-overlay" id="loader">
-                <div class="spinner"></div>
-                <p style="margin-top: 15px;">جاري معالجة الفيديو بالذكاء الاصطناعي...</p>
-                <small style="color: #666;">قد يستغرق ذلك بضع دقائق حسب طول الفيديو</small>
-            </div>
-        </div>
-        <div id="downloadArea" style="margin-top: 20px;"></div>
-    </div>
-
-    <div class="sidebar">
-        <h2>إعدادات الفيديو</h2>
+<div class="app-container">
+    <div class="viewer">
+        <!-- المقارنة: أصلي -->
+        <span class="label-tag">الأصلي (Original)</span>
+        <video id="originalVideo" playsinline muted loop></video>
         
-        <div class="control-group">
-            <label>نموذج الذكاء الاصطناعي</label>
-            <select>
-                <option>Real-ESRGAN Video (Standard)</option>
-                <option disabled>Artemis (قريباً)</option>
-                <option disabled>Proteus (قريباً)</option>
-            </select>
-        </div>
+        <!-- المقارنة: بعد التعديل -->
+        <span class="label-tag">النتيجة (Enhanced)</span>
+        <video id="enhancedVideo" playsinline controls loop></video>
 
-        <div class="control-group">
-            <label>درجة التكبير (Upscaling)</label>
-            <select id="scale">
-                <option value="2">2x - HD Quality</option>
-                <option value="4">4x - 4K Quality</option>
-            </select>
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p>جاري المعالجة... (قد يستغرق 2-5 دقائق)</p>
         </div>
-
-        <div class="control-group">
-            <label>تحسين ملامح الوجه (Face Refinement)</label>
-            <select id="face_enhance">
-                <option value="false">إيقاف</option>
-                <option value="true">تفعيل</option>
-            </select>
-        </div>
-
-        <div class="control-group">
-            <label>معدل الإطارات (FPS)</label>
-            <input type="number" id="fps" value="24" min="1" max="60">
-        </div>
-
-        <button class="btn-run" id="runBtn" onclick="startEnhancement()">تصدير الفيديو (Export)</button>
     </div>
 
-    <script>
-        const videoInput = document.getElementById('videoInput');
-        const previewVideo = document.getElementById('previewVideo');
-        const placeholder = document.getElementById('placeholder');
-        const loader = document.getElementById('loader');
-        const runBtn = document.getElementById('runBtn');
+    <div class="controls">
+        <div class="grid">
+            <div>
+                <label>التكبير</label>
+                <select id="scale">
+                    <option value="2">2x HD</option>
+                    <option value="4">4x 4K</option>
+                </select>
+            </div>
+            <div>
+                <label>تحسين الوجه</label>
+                <select id="face_enhance">
+                    <option value="false">إيقاف</option>
+                    <option value="true">تفعيل</option>
+                </select>
+            </div>
+        </div>
 
-        videoInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const url = URL.createObjectURL(file);
-                previewVideo.src = url;
-                previewVideo.style.display = 'block';
-                placeholder.style.display = 'none';
-            }
-        });
+        <input type="file" id="videoInput" accept="video/*" style="display:none">
+        <button class="btn-main" id="selectBtn" onclick="document.getElementById('videoInput').click()">1. اختر الفيديو</button>
+        <button class="btn-main" id="runBtn" onclick="process()">2. ابدأ المعالجة والتصدير</button>
+        
+        <a id="downloadBtn" class="btn-main btn-download">3. حفظ في الاستوديو</a>
+    </div>
+</div>
 
-        async function startEnhancement() {
-            if (!videoInput.files[0]) return alert("الرجاء اختيار فيديو أولاً");
+<script>
+    const videoInput = document.getElementById('videoInput');
+    const originalVideo = document.getElementById('originalVideo');
+    const enhancedVideo = document.getElementById('enhancedVideo');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const loader = document.getElementById('loader');
 
-            loader.style.display = 'flex';
-            runBtn.disabled = true;
-
-            const formData = new FormData();
-            formData.append('file', videoInput.files[0]);
-            formData.append('scale', document.getElementById('scale').value);
-            formData.append('face_enhance', document.getElementById('face_enhance').value);
-            formData.append('fps', document.getElementById('fps').value);
-
-            try {
-                const response = await fetch('/enhance-video', { method: 'POST', body: formData });
-                const data = await response.json();
-
-                if (data.video_url) {
-                    previewVideo.src = data.video_url;
-                    document.getElementById('downloadArea').innerHTML = `
-                        <a href="${data.video_url}" download class="btn-run" style="text-decoration:none; background:#28a745">تحميل الفيديو المحسن (MP4)</a>
-                    `;
-                    alert("اكتملت المعالجة بنجاح!");
-                } else {
-                    alert("حدث خطأ: " + data.error);
-                }
-            } catch (error) {
-                alert("فشل الاتصال بالسيرفر");
-            } finally {
-                loader.style.display = 'none';
-                runBtn.disabled = false;
-            }
+    videoInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            originalVideo.src = url;
+            originalVideo.play();
+            document.getElementById('selectBtn').innerText = "تم اختيار: " + file.name.substring(0,10) + "...";
         }
-    </script>
+    };
+
+    async function process() {
+        if (!videoInput.files[0]) return alert("اختر فيديو أولاً");
+
+        loader.style.display = 'flex';
+        const formData = new FormData();
+        formData.append('file', videoInput.files[0]);
+        formData.append('scale', document.getElementById('scale').value);
+        formData.append('face_enhance', document.getElementById('face_enhance').value);
+        formData.append('fps', "24");
+
+        try {
+            const response = await fetch('/enhance-video', { method: 'POST', body: formData });
+            const data = await response.json();
+
+            if (data.video_url) {
+                enhancedVideo.src = data.video_url;
+                downloadBtn.href = data.video_url;
+                downloadBtn.style.display = 'block';
+                downloadBtn.download = "topaz_enhanced.mp4"; // للكمبيوتر
+                alert("تمت المعالجة! يمكنك الآن مشاهدة الفرق وحفظ الفيديو.");
+            } else {
+                alert("خطأ: " + data.error);
+            }
+        } catch (e) {
+            alert("حدث خطأ في الاتصال بالسيرفر");
+        } finally {
+            loader.style.display = 'none';
+        }
+    }
+</script>
+
 </body>
 </html>
